@@ -1,0 +1,29 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hierarchical Attention Networks for Document Classification</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+<div>
+    Prediction: <b>{{prediction}}</b>
+</div>
+<div>
+    <img alt="my plot" src="data:image/png;base64, {{plot_url}}">
+</div>
+<div>
+    <table>
+        {% for sent in attentions %}
+        <tr>
+            <td bgcolor="{{  red_background_hex(sent[0]) }}" width="20"></td>
+            <td>
+                {% for word in sent[1] %}
+                <span style="background-color: {{  blue_background_hex(word[0]) }}">{{word[1]}}</span>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>
