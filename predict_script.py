@@ -1,3 +1,6 @@
+"""
+Simple script to demonstrate loading of pretrained models and prediction
+"""
 from han.HAN import HAN
 
 han = HAN()

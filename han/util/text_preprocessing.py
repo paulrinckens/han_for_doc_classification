@@ -29,13 +29,9 @@ def normalize(text: str, filter_stop_words=False):
     return filtered_sentences
 
 
-def clean_str(string: str):
-    """
-    Tokenization/string cleaning for dataset
-    Every dataset is lower cased except
-    """
-    string = re.sub(r"\\", "", string)
-    string = re.sub(r"\'", "", string)
-    string = re.sub(r"\"", "", string)
-    string = re.sub(r"<.*>", "", string)
-    return string.strip()
+def clean_str(text: str):
+    text = re.sub(r"\\", "", text)
+    text = re.sub(r"\'", "", text)
+    text = re.sub(r"\"", "", text)
+    text = re.sub(r"<.*>", "", text)
+    return text.strip()

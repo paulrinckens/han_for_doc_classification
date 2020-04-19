@@ -1,3 +1,6 @@
+"""
+Simple script to train a new model and tokenizer on the 10kGNAD dataset.
+"""
 from han.HAN import HAN
 from han.util import TenKGNAD
 

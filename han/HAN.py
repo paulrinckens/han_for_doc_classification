@@ -32,57 +32,54 @@ class HAN:
         self.logger = logging.getLogger()
 
         self.nlp = spacy.load("de", disable=["tagger", "parser", "ner"])
-        self.nlp.add_pipe(self.nlp.create_pipe('sentencizer'))
+        self.nlp.add_pipe(self.nlp.create_pipe("sentencizer"))
 
     def _build_model(self, embedding_matrix, n_classes):
         num_words = min(self.MAX_NUM_WORDS, len(self.tokenizer.word_index) + 1)
 
-        # Words level attention model
-        word_input = Input(shape=(self.MAX_WORD_NUM,), dtype='int32',
-                           name='word_input')
+        # Word level attention model
+        word_input = Input(shape=(self.MAX_WORD_NUM,), dtype="int32",
+                           name="word_input")
         word_sequences = Embedding(num_words,
                                    self.EMBED_DIM,
                                    weights=[embedding_matrix],
                                    input_length=self.MAX_WORD_NUM,
                                    trainable=False,
-                                   name='word_embedding')(word_input)
+                                   name="word_embedding")(word_input)
         word_gru = Bidirectional(GRU(50, return_sequences=True),
-                                 name='word_gru')(word_sequences)
-        word_dense = Dense(100, activation='relu', name='word_dense')(word_gru)
-        word_att = AttentionLayer(self.EMBED_DIM, name='word_attention')(
+                                 name="word_gru")(word_sequences)
+        word_dense = Dense(100, activation="relu", name="word_dense")(word_gru)
+        word_att = AttentionLayer(self.EMBED_DIM, name="word_attention")(
             word_dense)
         word_encoder = Model(inputs=word_input, outputs=word_att)
 
         # Sentence level attention model
         sent_input = Input(shape=(self.MAX_SENTENCE_NUM, self.MAX_WORD_NUM),
-                           dtype='int32', name='sent_input')
-        sent_encoder = TimeDistributed(word_encoder, name='sent_linking')(
+                           dtype="int32", name="sent_input")
+        sent_encoder = TimeDistributed(word_encoder, name="sent_linking")(
             sent_input)
         sent_gru = Bidirectional(GRU(50, return_sequences=True),
-                                 name='sent_gru')(sent_encoder)
-        sent_dense = Dense(100, activation='relu', name='sent_dense')(sent_gru)
-        sent_att = AttentionLayer(self.EMBED_DIM, name='sent_attention')(
+                                 name="sent_gru")(sent_encoder)
+        sent_dense = Dense(100, activation="relu", name="sent_dense")(sent_gru)
+        sent_att = AttentionLayer(self.EMBED_DIM, name="sent_attention")(
             sent_dense)
-        sent_drop = Dropout(0.5, name='sent_dropout')(sent_att)
-        preds = Dense(n_classes, activation='softmax', name='output')(sent_drop)
+        sent_drop = Dropout(0.5, name="sent_dropout")(sent_att)
+        preds = Dense(n_classes, activation="softmax", name="output")(sent_drop)
 
-        # Model compile
         model = Model(sent_input, preds)
-        model.compile(loss='categorical_crossentropy', optimizer='adam',
-                      metrics=['acc'])
+        model.compile(loss="categorical_crossentropy", optimizer="adam",
+                      metrics=["acc"])
 
         self.logger.info(word_encoder.summary())
         self.logger.info(model.summary())
-        print("model.summary()", model.summary())
 
         return model, word_encoder
 
     def fit_tokenizer(self, texts: List[str]):
-        # finally, vectorize the text samples into a 2D integer tensor
         tokenizer = Tokenizer(num_words=self.MAX_NUM_WORDS, lower=True)
         tokenizer.fit_on_texts(texts)
 
-        print('Found %s unique tokens.' % len(tokenizer.word_index))
+        self.logger.info(f"Found {len(tokenizer.word_index)} unique tokens.")
         return tokenizer
 
     def build_and_train(self,
@@ -116,7 +113,7 @@ class HAN:
         if model_dir:
             # save fitted toknizer
             tokenizer_path = str(pathlib.Path(model_dir, tokenizer_filename))
-            with open(tokenizer_path, 'wb') as handle:
+            with open(tokenizer_path, "wb") as handle:
                 pickle.dump(self.tokenizer,
                             handle,
                             protocol=pickle.HIGHEST_PROTOCOL)
@@ -124,33 +121,35 @@ class HAN:
             checkpoint_model_path = str(pathlib.Path(model_dir, model_filename))
             callbacks.append(ModelCheckpoint(checkpoint_model_path,
                                              verbose=verbose,
-                                             monitor='val_loss',
+                                             monitor="val_loss",
                                              save_best_only=True,
-                                             mode='auto'))
+                                             mode="auto"))
 
-        history = self.model.fit(x=encoded_train_x,
-                                 y=train_y,
-                                 validation_data=(encoded_dev_x, dev_y),
-                                 epochs=epochs,
-                                 batch_size=batch_size,
-                                 callbacks=callbacks,
-                                 verbose=verbose)
+        self.model.fit(x=encoded_train_x,
+                       y=train_y,
+                       validation_data=(encoded_dev_x, dev_y),
+                       epochs=epochs,
+                       batch_size=batch_size,
+                       callbacks=callbacks,
+                       verbose=verbose)
 
     def load_model(self, model_dir: str, model_filename: str,
                    tokenizer_filename: str):
+        # load sentence level attention model
         model_path = str(pathlib.Path(model_dir, model_filename))
-        with CustomObjectScope({'AttentionLayer': AttentionLayer}):
+        with CustomObjectScope({"AttentionLayer": AttentionLayer}):
             self.model = load_model(model_path)
-            print(f"Successfully loaded model from {model_path}")
+            self.logger.info(f"Successfully loaded model from {model_path}")
 
         # retrieve word attention model
         self.word_attention_model = self.model.get_layer("sent_linking").layer
 
         # load tokenizer
         tokenizer_path = str(pathlib.Path(model_dir, tokenizer_filename))
-        with open(tokenizer_path, 'rb') as handle:
+        with open(tokenizer_path, "rb") as handle:
             self.tokenizer = pickle.load(handle)
-            print(f"Successfully loaded tokenizer from {tokenizer_path}")
+            self.logger.info(
+                f"Successfully loaded tokenizer from {tokenizer_path}")
 
     def predict(self, texts: List[str]):
         encoded_text = self.encode_texts(texts)
@@ -162,27 +161,27 @@ class HAN:
 
         normalized_text = text_preprocessing.normalize(text)
 
-        # word level attention
+        # word level attention model
         hidden_word_encoding_out = Model(
-            inputs=self.word_attention_model.get_layer('word_input').output,
-            outputs=self.word_attention_model.get_layer('word_dense').output)
+            inputs=self.word_attention_model.get_layer("word_input").output,
+            outputs=self.word_attention_model.get_layer("word_dense").output)
 
         hidden_word_encodings = hidden_word_encoding_out.predict(encoded_text)
         word_context = self.word_attention_model.get_layer(
-            'word_attention').get_weights()
+            "word_attention").get_weights()
         word_attentions = _get_attention_weights(hidden_word_encodings,
                                                  word_context)
 
-        # sentence level attention
+        # sentence level attention model
         hidden_sent_encoding_out = Model(
             inputs=self.model.get_layer("sent_input").output,
             outputs=[self.model.get_layer("output").output,
-                     self.model.get_layer('sent_dense').output])
+                     self.model.get_layer("sent_dense").output])
         output_array = hidden_sent_encoding_out.predict(
             np.expand_dims(encoded_text, 0))
         sentence_attentions = _get_attention_weights(output_array[1],
                                                      self.model.get_layer(
-                                                         'sent_attention').get_weights())
+                                                         "sent_attention").get_weights())
 
         prediction = output_array[0]
 
@@ -215,11 +214,12 @@ class HAN:
         return encoded_texts
 
     def _build_embedding_matrix(self, embedding_path):
-        self.logger.info('Preparing embedding matrix.')
-
+        self.logger.info(f"Loading embeddings from file {embedding_path} ...")
         embeddings_index = embedding_utils.get_embedding_index(embedding_path)
+        self.logger.info(f"Found {len(embeddings_index)} word embeddings.")
 
         # prepare embedding matrix that maps word indexs to their vectors
+        self.logger.info("Building embedding matrix ...")
         num_words = min(self.MAX_NUM_WORDS, len(self.tokenizer.word_index) + 1)
         embedding_matrix = np.zeros((num_words, self.EMBED_DIM))
         for word, i in self.tokenizer.word_index.items():
@@ -229,15 +229,13 @@ class HAN:
             if embedding_vector is not None:
                 # words not found in embedding index will be all-zeros.
                 embedding_matrix[i] = embedding_vector
+        self.logger.info("Successfully built embedding matrix.")
 
         return embedding_matrix
 
 
-def _get_attention_weights(sequenceSentence, weights):
-    """
-    The same function as the AttentionLayer class.
-    """
-    uit = np.dot(sequenceSentence, weights[0]) + weights[1]
+def _get_attention_weights(sequence, weights):
+    uit = np.dot(sequence, weights[0]) + weights[1]
     uit = np.tanh(uit)
 
     ait = np.dot(uit, weights[2])

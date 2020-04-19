@@ -11,15 +11,12 @@ class AttentionLayer(Layer):
     """
 
     def __init__(self, attention_dim, **kwargs):
-        # Initializer
         self.supports_masking = True
-        self.init = initializers.get(
-            'glorot_uniform')  # initializes values with uniform distribution
+        self.init = initializers.get('glorot_uniform')
         self.attention_dim = attention_dim
         super(AttentionLayer, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        # Builds all weights
         # W = Weight matrix, b = bias vector, u = context vector
         assert len(input_shape) == 3
         self.W = K.variable(self.init((input_shape[-1], self.attention_dim)),
@@ -34,7 +31,7 @@ class AttentionLayer(Layer):
         return None
 
     def call(self, hit, mask=None):
-        # Here, the actual calculation is done
+        # Calculation according to paper description
         uit = K.bias_add(K.dot(hit, self.W), self.b)
         uit = K.tanh(uit)
 
