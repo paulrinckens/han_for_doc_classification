@@ -65,6 +65,3 @@ def split_df(dataframe, column_name, training_split, validation_split,
     print('Test:', len(test), ', Percentage: ', len(test) / len(dataframe))
 
     return train, validation, test
-
-
-load("../../data/articles.csv")
