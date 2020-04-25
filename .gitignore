@@ -132,3 +132,5 @@ dmypy.json
 
 *.iml
 /embeddings/glove_german/vectors.txt
+/models/
+/data/
