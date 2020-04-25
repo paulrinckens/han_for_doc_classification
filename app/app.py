@@ -36,7 +36,7 @@ async def visualize(request: Request, text: str):
     probs, attentions = han.predict_and_visualize_attention(text)
     prediction = class_names[np.argmax(probs)]
 
-    fig = Figure(figsize=(8, 2), tight_layout=True)
+    fig = Figure(figsize=(5, 2), tight_layout=True)
     ax = fig.add_subplot(1, 1, 1)
 
     y_pos = np.arange(len(class_names))
