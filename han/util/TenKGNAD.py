@@ -26,23 +26,8 @@ def load(path):
 
 def split_df(dataframe, column_name, training_split, validation_split,
              test_split):
-    """
-    Splits a pandas dataframe into trainingset, validationset and testset in specified ratio.
-    All sets are balanced, which means they have the same ratio for each category as the full set.
-    Input:   dataframe        - Pandas Dataframe, should include a column for data and one for categories
-             column_name      - Name of dataframe column which contains the categorical output values
-             training_split   - from ]0,1[, default = 0.6
-             validation_split - from ]0,1[, default = 0.2
-             test_split       - from ]0,1[, default = 0.2
-                                Sum of all splits need to be 1
-    Output:  train            - Pandas DataFrame of trainset
-             validation       - Pandas DataFrame of validationset
-             test             - Pandas DataFrame of testset
-    """
     if training_split + validation_split + test_split != 1.0:
         raise ValueError('Split paramter sum should be 1.0')
-
-    total = len(dataframe.index)
 
     train = dataframe.reset_index().groupby(column_name).apply(
         lambda x: x.sample(frac=training_split)).reset_index(
