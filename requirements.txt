@@ -5,6 +5,8 @@ Keras==2.3.1
 fastapi==0.65.2
 numpy==1.17.4
 matplotlib==3.1.2
+tensorflow==2.3.1
+Jinja2==2.11.3
 tensorflow==2.5.1
-Jinja2==2.11.2
+Jinja2==2.11.3
 aiofiles==0.5.0
