@@ -2,7 +2,7 @@ uvicorn==0.11.7
 spacy==2.2.4
 pandas==0.25.3
 Keras==2.3.1
-fastapi==0.54.1
+fastapi==0.65.2
 numpy==1.17.4
 matplotlib==3.1.2
 tensorflow==2.5.1
